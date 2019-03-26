@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Mono.Cecil;
+//using Mono.Cecil;
 
 namespace MBrace.Vagabond.AssemblyParser
 {
@@ -25,6 +27,7 @@ namespace MBrace.Vagabond.AssemblyParser
 
             if (appDomainAssembly?.Location != null)
             {
+                var assembly0 = Assembly.ReflectionOnlyLoadFrom(appDomainAssembly.Location).;
                 assembly = AssemblyDefinition.ReadAssembly(appDomainAssembly.Location);
                 cache[assembly.FullName] = assembly;
                 return assembly;

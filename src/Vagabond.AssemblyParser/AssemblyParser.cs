@@ -9,15 +9,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 
 using SR = System.Reflection;
-using MR = Mono.Reflection;
-using MC = Mono.Cecil;
+using MR = System.Reflection;
+using System.Reflection.Emit;
+using MC = System.Reflection;
+using System.Reflection.PortableExecutable;
+//using MR = Mono.Reflection;
+//using MC = Mono.Cecil;
 
-using Mono.Reflection;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+//using Mono.Reflection;
+//using Mono.Cecil;
+//using Mono.Cecil.Cil;
 
 namespace MBrace.Vagabond.AssemblyParser
 {
@@ -69,10 +74,12 @@ namespace MBrace.Vagabond.AssemblyParser
         private AssemblyDefinition Map()
         {
             _assembly_definition = AssemblyDefinitionFor(_assembly);
-            _module_definition = _assembly_definition.MainModule;
+            _module_definition = ModuleDefinitionFor(_assembly);
 
             foreach (var type in _assembly.GetTypes())
-                if (! type.IsNested) MapType(type);
+            {
+                if (!type.IsNested) MapType(type);
+            }
 
             MapCustomAttributes(_assembly, _assembly_definition);
             MapCustomAttributes(_assembly.ManifestModule, _assembly_definition.MainModule);
@@ -80,7 +87,7 @@ namespace MBrace.Vagabond.AssemblyParser
             return _assembly_definition;
         }
 
-        private void MapType(Type type, TypeDefinition declaringType = null)
+        private void MapType(Type type, TypeDefinition declaringType)
         {
             switch (_options.GetTypeParseAction(type))
             {
@@ -113,13 +120,13 @@ namespace MBrace.Vagabond.AssemblyParser
                     foreach (var evt in type.GetEvents(AllDeclared))
                         MapEvent(evt, EventDefinitionFor(evt, type_definition));
 
-                    foreach (var iface in type.GetInterfaces())
-                        type_definition.Interfaces.Add(new InterfaceImplementation(CreateReference(iface, type_definition)));
+//                    foreach (var iface in type.GetInterfaces())
+//                        type_definition.Interfaces.Add(new InterfaceImplementation(CreateReference(iface, type_definition)));
 
                     foreach (var nested_type in type.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
                         MapType(nested_type, type_definition);
 
-                    MapCustomAttributes(type, type_definition);
+//                    MapCustomAttributes(type, type_definition);
                     break;
             }
         }
@@ -206,7 +213,8 @@ namespace MBrace.Vagabond.AssemblyParser
 
         private static bool ShouldMapBody(MethodBase method, MethodDefinition method_definition)
         {
-            return method_definition.HasBody && method.GetMethodBody() != null;
+            // return method_definition.HasBody && method.GetMethodBody() != null;
+            return method.GetMethodBody() != null;
         }
 
         private void MapOverrides(MethodBase method, MethodDefinition method_definition)
@@ -284,12 +292,12 @@ namespace MBrace.Vagabond.AssemblyParser
         {
             if (_options.EraseMember(property)) return;
 
-            var type_definition = property_definition.DeclaringType;
+            var type_definition = property_definition.GetType();
 
             var getter = property.GetGetMethod(nonPublic: true);
             if (getter != null)
             {
-                property_definition.GetMethod = type_definition.Methods.Single(m => m.Name == getter.Name);
+                property_definition.GetMethod = type_definition.GetMethods().Single(m => m.Name == getter.Name);
                 property_definition.GetMethod.IsGetter = true;
             }
 
@@ -523,6 +531,32 @@ namespace MBrace.Vagabond.AssemblyParser
 
         private static AssemblyDefinition AssemblyDefinitionFor(Assembly assembly)
         {
+            using (var asmFile = File.OpenRead(assembly.Location))
+            {
+                using (var reader = new PEReader(asmFile))
+                {
+                    var metadata = reader.GetMetadataReader();
+                    var assemblyDef = metadata.GetAssemblyDefinition();
+                    metadata.GetModuleDefinition
+                    return assemblyDef;
+                }
+            }
+        }
+        private static ModuleDefinition ModuleDefinitionFor(Assembly assembly)
+        {
+            using (var asmFile = File.OpenRead(assembly.Location))
+            {
+                using (var reader = new PEReader(asmFile))
+                {
+                    var metadata = reader.GetMetadataReader();
+                    var moduleDef = metadata.GetModuleDefinition();
+                    return moduleDef;
+                }
+            }
+        }
+#if mdv
+        private static AssemblyDefinition AssemblyDefinitionFor(Assembly assembly)
+        {
             var name = assembly.GetName();
 
             var moduleParams = new ModuleParameters
@@ -538,7 +572,7 @@ namespace MBrace.Vagabond.AssemblyParser
             assembly_definition.MainModule.Runtime = TargetRuntime.Net_4_0;
             return assembly_definition;
         }
-
+#endif
         private MethodDefinition MethodDefinitionFor(MethodBase method, TypeDefinition declaringType)
         {
             var method_definition = new MethodDefinition(

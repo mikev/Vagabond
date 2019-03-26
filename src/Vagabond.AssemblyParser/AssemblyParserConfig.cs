@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-using Mono.Cecil;
+//using Mono.Cecil;
 
 namespace MBrace.Vagabond.AssemblyParser
 {

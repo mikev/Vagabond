@@ -28,7 +28,7 @@
 
 using System;
 
-namespace Mono.Reflection
+namespace MBrace.Vagabond.AssemblyParser
 {
 
     class ByteBuffer

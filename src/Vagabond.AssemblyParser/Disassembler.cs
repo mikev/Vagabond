@@ -30,7 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Mono.Reflection
+namespace MBrace.Vagabond.AssemblyParser
 {
 
     static class Disassembler
@@ -41,7 +41,8 @@ namespace Mono.Reflection
             if (self == null)
                 throw new ArgumentNullException("self");
 
-            return MethodBodyReader.GetInstructions(self).AsReadOnly();
+            var instructions = MethodBodyReader.GetInstructions(self).AsReadOnly();
+            return instructions;
         }
     }
 }

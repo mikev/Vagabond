@@ -30,7 +30,7 @@ using System;
 using System.Reflection.Emit;
 using System.Text;
 
-namespace Mono.Reflection
+namespace MBrace.Vagabond.AssemblyParser
 {
 
     sealed class Instruction
