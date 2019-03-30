@@ -907,9 +907,12 @@ namespace MBrace.Vagabond.AssemblyParser
 
         private CustomAttributeArgument CustomAttributeArgumentFor(CustomAttributeTypedArgument argument)
         {
+            return new System.Reflection.CustomAttributeTypedArgument();
+#if mdv
             return new CustomAttributeArgument(
                 CreateReference(argument.ArgumentType),
                 MapCustomAttributeValue(argument));
+#endif
         }
 
         private object MapCustomAttributeValue(CustomAttributeTypedArgument argument)
